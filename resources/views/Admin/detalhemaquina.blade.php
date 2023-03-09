@@ -8,6 +8,70 @@
 
 @section('content')
 
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        {{ session('error') }}
+    </div>
+@endif
+
+@if (session('success'))
+    <div class="alert alert-success">
+       <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        {{ session('success') }}
+    </div>
+@endif
+
+<div class="card p-3 mb-3">
+
+    <div class="row">
+
+    <a class="btn btn-success p-3 mb-3 m-2" href="{{route('relatoriopm1', $id)}}">Nova - PM1</a>
+    <a class="btn btn-success p-3 mb-3 m-2" href="{{route('relatorioAtendimento', $id)}}">Novo Atendimento</a>
+    <a class="btn btn-success p-3 mb-3 m-2" href="{{route('alteracaoimagem', $imagens[1]->id)}}">Start-Up</a>
+
+
+    </div>
+
+    @if ($relatorioAberto->count() > 0) 
+
+    <br><h4>Atendimento em Andamento</h4> <br>
+    <div class="row">
+
+        <table id="example" class="hover" style="width:100%">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Endereço</th>
+                <th>Tipo de Atendimento</th>
+                
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($relatorioAberto as $relatorio)
+            <tr>
+                <td>{{$relatorio->id}}</td>
+                <td>{{$relatorio->endereco}}</td>
+                <td>{{$relatorio->tipoAtendimento}}</td>
+                <td> <a class="btn btn-success" href="{{route('alteraAtendimento', $relatorio->id)}}">Atualizar</a> </td>
+                <td> <a class="btn btn-success" href="#">Finalizar</a> </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+
+
+    </div>
+
+    @endif
+
+</div>
+
 <div class="card p-3 mb-3">
 
 <div class="row">
@@ -30,7 +94,7 @@
 
     <br>
     
-         <a class="btn btn-success" href="{{route('alteracaoimagem', $imagens[1]->id)}}">Inserir ou Alterar Foto</a>
+        <a class="btn btn-success" href="{{route('alteracaoimagem', $imagens[1]->id)}}">Inserir ou Alterar Foto</a>
 
     </div>
 
@@ -500,4 +564,7 @@
     });
   })
 </script>
+
+
+
 @endsection

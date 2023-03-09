@@ -108,3 +108,7 @@ Route::get('locacoes/relatorio/pm1/{id}', [LocacoesController::class, 'relatorio
 Route::post('locacoes/relatorio/pm1/{id}', [LocacoesController::class, 'processaPm1']);
 Route::get('locacoes/relatorios', [LocacoesController::class, 'listarelatorios'])->name('relatorioslocacao');
 Route::get('locacoes/relatorio/{id}', [LocacoesController::class, 'detalherelatorio'])->name('detalherelatorio');
+Route::get('locacoes/relatorio/atendimento/{id}', [LocacoesController::class, 'relatorioAtendimento'])->name('relatorioAtendimento');
+Route::post('locacoes/relatorio/atendimento/{id}', [LocacoesController::class, 'processaRelatorioAtendimento']);
+Route::get('locacoes/relatorio/atendimento/altera/{id}', [LocacoesController::class, 'alteraAtendimento'])->name('alteraAtendimento');
+Route::post('locacoes/relatorio/atendimento/altera/{id}', [LocacoesController::class, 'processaAlteraAtendimento']);

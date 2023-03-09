@@ -13,6 +13,7 @@ use App\Models\Municipio;
 use App\Models\Prospecto;
 use App\Models\Obsprospecto;
 use Illuminate\Support\Facades\Http;
+use App\Models\Atendimentoreport;
 
 
 use Illuminate\Http\Request;
@@ -861,6 +862,12 @@ class ControleController extends Controller
     public function detalhemaquina($id)
     {
 
+        $relatorioAberto = AtendimentoReport::where('idEquip', $id)
+            ->where('statusRelatorio', '<>', 4)
+            ->get();
+
+
+
         $gmg = Genset::select()
             ->where('id', $id)
             ->first();
@@ -872,7 +879,9 @@ class ControleController extends Controller
 
         return view('Admin.detalhemaquina', [
             'dados' =>  $gmg,
-            'imagens' => $images
+            'imagens' => $images,
+            'id' => $id,
+            'relatorioAberto' => $relatorioAberto,
         ]);
     }
 
@@ -1023,14 +1032,14 @@ class ControleController extends Controller
             ]
         );
 
-         return redirect()->route(
+        return redirect()->route(
             'buscacnpjenviada',
             [
                 'cidade' => $city,
                 'segmento' => $seg,
             ]
         );
-        
+
         //echo "A cidade é: ".$cidade."<br> E o segmento é: ".$seg;
     }
 
@@ -1043,7 +1052,7 @@ class ControleController extends Controller
         return view('Admin.inicioProspecoes', [
             'dados' => $dados,
             'total' => $total
-            ]);
+        ]);
     }
 
     public function detalheDaProspeccao($id)
@@ -1076,11 +1085,10 @@ class ControleController extends Controller
             'obs' => $obs
         ]);
 
-    return redirect()->route('detalheprospeccao', $contato);
-    
+        return redirect()->route('detalheprospeccao', $contato);
     }
 
-     public function buscacnpjenviada($cidade, $segmento)
+    public function buscacnpjenviada($cidade, $segmento)
     {
 
         return view('Admin.buscacnpjenviada', [
@@ -1089,19 +1097,20 @@ class ControleController extends Controller
         ]);
     }
 
-    public function telaAlteramaquina($id){
+    public function telaAlteramaquina($id)
+    {
 
         $dados = Genset::select()
-                ->where('id', $id)
-                ->first();
+            ->where('id', $id)
+            ->first();
 
-        return view('Admin.alteramaquina',[
+        return view('Admin.alteramaquina', [
             'dados' => $dados
         ]);
-
     }
 
-    public function processaAlteracaoMaquina($id){
+    public function processaAlteracaoMaquina($id)
+    {
 
         $tipoEquipamento = filter_input(INPUT_POST, 'tipoEquipamento');
         $identificacao = filter_input(INPUT_POST, 'identificacao');
@@ -1145,50 +1154,50 @@ class ControleController extends Controller
         $fabricanteChaveRede = filter_input(INPUT_POST, 'fabricanteChaveRede');
         $modeloChaveRede = filter_input(INPUT_POST, 'modeloChaveRede');
 
-        Genset::where('id', $id)->update([  
-                'tipoEquipamento'  => $tipoEquipamento,
-                'identificacao'  => $identificacao,
-                'fabricante'  => $fabricante,
-                'numeroSerie'  => $numeroSerie,
-                'dataFabricacao'  => $dataFabricacao,
-                'potencia'  => $potencia,
-                'abrangencia'  => $abrangencia,
-                'tanqueBase'  => $tanqueBase,
-                'aberturaJanelaBase'  => $aberturaJanelaBase,
-                'capacidadeTanqueBase'  => $capacidadeTanqueBase,
-                'tanqueDiario'  => $tanqueDiario,
-                'aberturaJanelaDiario' => $aberturaJanelaDiario,
-                'capacidadeTanqueDiario' => $capacidadeTanqueDiario,
-                'tanqueMensal' => $tanqueMensal,
-                'aberturaJanelaMensal' => $aberturaJanelaMensal,
-                'capacidadeTanqueMensal' => $capacidadeTanqueMensal,
-                'fabricanteMotor' => $fabricanteMotor,
-                'modeloMotor' => $modeloMotor,
-                'serieMotor' => $serieMotor,
-                'quantidadeOleoLubrificante' => $quantidadeOleoLubrificante,
-                'modeloFiltroCombustivel' => $modeloFiltroCombustivel,
-                'quantidadeFiltroCombustivel' => $quantidadeFiltroCombustivel,
-                'modeloFiltroSeparador' => $modeloFiltroSeparador,
-                'quantidadeFiltroSeparador' => $quantidadeFiltroSeparador,
-                'modeloFiltroAgua' => $modeloFiltroAgua,
-                'quantidadeFiltroAgua' => $quantidadeFiltroAgua,
-                'modeloFiltroOleo' => $modeloFiltroOleo,
-                'quantidadeFiltroOleo' => $quantidadeFiltroOleo,
-                'modeloFiltroAr' => $modeloFiltroAr,
-                'quantidadeFiltroAr' => $quantidadeFiltroAr,
-                'fabricanteAlternador' => $fabricanteAlternador,
-                'modeloAlternador' => $modeloAlternador,
-                'serieAlternador' => $serieAlternador,
-                'fabricanteModuloGrupo' => $fabricanteModuloGrupo,
-                'modeloModuloGrupo' => $modeloModuloGrupo,
-                'fabricanteModuloQta' => $fabricanteModuloQta,
-                'modeloModuloQta' => $modeloModuloQta,
-                'fabricanteChaveGrupo' => $fabricanteChaveGrupo,
-                'modeloChaveGrupo' => $modeloChaveGrupo,
-                'fabricanteChaveRede' => $fabricanteChaveRede,
-                'modeloChaveRede' => $modeloChaveRede,]);
+        Genset::where('id', $id)->update([
+            'tipoEquipamento'  => $tipoEquipamento,
+            'identificacao'  => $identificacao,
+            'fabricante'  => $fabricante,
+            'numeroSerie'  => $numeroSerie,
+            'dataFabricacao'  => $dataFabricacao,
+            'potencia'  => $potencia,
+            'abrangencia'  => $abrangencia,
+            'tanqueBase'  => $tanqueBase,
+            'aberturaJanelaBase'  => $aberturaJanelaBase,
+            'capacidadeTanqueBase'  => $capacidadeTanqueBase,
+            'tanqueDiario'  => $tanqueDiario,
+            'aberturaJanelaDiario' => $aberturaJanelaDiario,
+            'capacidadeTanqueDiario' => $capacidadeTanqueDiario,
+            'tanqueMensal' => $tanqueMensal,
+            'aberturaJanelaMensal' => $aberturaJanelaMensal,
+            'capacidadeTanqueMensal' => $capacidadeTanqueMensal,
+            'fabricanteMotor' => $fabricanteMotor,
+            'modeloMotor' => $modeloMotor,
+            'serieMotor' => $serieMotor,
+            'quantidadeOleoLubrificante' => $quantidadeOleoLubrificante,
+            'modeloFiltroCombustivel' => $modeloFiltroCombustivel,
+            'quantidadeFiltroCombustivel' => $quantidadeFiltroCombustivel,
+            'modeloFiltroSeparador' => $modeloFiltroSeparador,
+            'quantidadeFiltroSeparador' => $quantidadeFiltroSeparador,
+            'modeloFiltroAgua' => $modeloFiltroAgua,
+            'quantidadeFiltroAgua' => $quantidadeFiltroAgua,
+            'modeloFiltroOleo' => $modeloFiltroOleo,
+            'quantidadeFiltroOleo' => $quantidadeFiltroOleo,
+            'modeloFiltroAr' => $modeloFiltroAr,
+            'quantidadeFiltroAr' => $quantidadeFiltroAr,
+            'fabricanteAlternador' => $fabricanteAlternador,
+            'modeloAlternador' => $modeloAlternador,
+            'serieAlternador' => $serieAlternador,
+            'fabricanteModuloGrupo' => $fabricanteModuloGrupo,
+            'modeloModuloGrupo' => $modeloModuloGrupo,
+            'fabricanteModuloQta' => $fabricanteModuloQta,
+            'modeloModuloQta' => $modeloModuloQta,
+            'fabricanteChaveGrupo' => $fabricanteChaveGrupo,
+            'modeloChaveGrupo' => $modeloChaveGrupo,
+            'fabricanteChaveRede' => $fabricanteChaveRede,
+            'modeloChaveRede' => $modeloChaveRede,
+        ]);
 
-                return redirect()->route('detalhemaquina', $id)->with('success', 'Atualizado.');
-        
+        return redirect()->route('detalhemaquina', $id)->with('success', 'Atualizado.');
     }
 }

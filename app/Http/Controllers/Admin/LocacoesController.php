@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Relatorio;
 use App\Models\Imagemrelatorio;
 use App\Models\Genset;
+use App\Models\Atendimentoreport;
+use App\Models\Obsatendimentoreport;
 use Mail;
 use App\Mail\NovoRelatorio;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\Enviaemail;
+use Carbon\Carbon;
 
 
 use Illuminate\Http\Request;
@@ -42,11 +45,11 @@ class LocacoesController extends Controller
             ->where('gensets.id', $id)
             ->first();
 
-    /* var_dump($cliente); */
+        /* var_dump($cliente); */
 
         return view('Locacoes.pm1', [
             'cliente' => $cliente,
-        ]); 
+        ]);
     }
 
     public function processaPm1($id)
@@ -293,5 +296,214 @@ class LocacoesController extends Controller
             'foto2' => $foto2,
             'foto3' => $foto3,
         ]);
+    }
+
+    public function relatorioAtendimento($id)
+    {
+
+        $relatorioAberto = AtendimentoReport::where('idEquip', $id)
+            ->where('statusRelatorio', '<>', 4)
+            ->get();
+
+
+
+        if ($relatorioAberto->count() > 0) {
+            return redirect()->route('detalhemaquina', $id)->with('error', 'Esse equipamento possui atendimento aberto. Não é possivel criar um novo no momento');
+        } else {
+
+            $cliente  = Genset::select()
+                ->join('clients', 'clients.id', '=', 'gensets.idCliente')
+                ->where('gensets.id', $id)
+                ->first();
+
+            return view('Locacoes.atendimento', [
+                'cliente' => $cliente,
+            ]);
+        }
+    }
+
+    public function processaRelatorioAtendimento($id)
+    {
+
+        $endereco = filter_input(INPUT_POST, 'endereco');
+        $tipoAtendimento = filter_input(INPUT_POST, 'tipoAtendimento');
+        $horaChamadoFormat = filter_input(INPUT_POST, 'horaChamado');
+        $horaChamado =  Carbon::createFromFormat('d-m-Y H:i', $horaChamadoFormat)->format('Y-m-d H:i');
+        $tipoConexao = filter_input(INPUT_POST, 'tipoConexao');
+        $caminhao = filter_input(INPUT_POST, 'caminhao');
+        $seccaoCondutor = filter_input(INPUT_POST, 'seccaoCondutor');
+        $lancesPorFase = filter_input(INPUT_POST, 'lancesFase');
+        $lancesNeutro = filter_input(INPUT_POST, 'lancesNeutro');
+        if (filter_input(INPUT_POST, 'horimetroInicial') == '') {
+            $horimetroInicial = null;
+        } else {
+            $horimetroInicial = filter_input(INPUT_POST, 'horimetroInicial');
+        }
+
+        if (filter_input(INPUT_POST, 'horimetroFinal') == '') {
+            $horimetroFinal = null;
+        } else {
+            $horimetroFinal = filter_input(INPUT_POST, 'horimetroFinal');
+        }
+
+        if (filter_input(INPUT_POST, 'kwhInicial') == '') {
+            $kwhInicial = null;
+        } else {
+            $kwhInicial = filter_input(INPUT_POST, 'kwhInicial');
+        }
+
+        if (filter_input(INPUT_POST, 'kwhFinal') == '') {
+            $kwhFinal = null;
+        } else {
+            $kwhFinal = filter_input(INPUT_POST, 'kwhFinal');
+        }
+
+        $chegadaGmgFormat = filter_input(INPUT_POST, 'chegadaGmg');
+        $chegadaGmg =  Carbon::createFromFormat('d-m-Y H:i', $chegadaGmgFormat)->format('Y-m-d H:i');
+
+        $inicioOperacaoFormat = filter_input(INPUT_POST, 'inicioOperacao');
+        $inicioOperacao =  Carbon::createFromFormat('d-m-Y H:i', $inicioOperacaoFormat)->format('Y-m-d H:i');
+
+        $terminoOperacao = filter_input(INPUT_POST, 'terminoOperacao');
+        $obs = filter_input(INPUT_POST, 'obsGerais');
+
+        if (filter_input(INPUT_POST, 'status') === 'Stand By') {
+            $statusRelatorio = 1;
+        } elseif (filter_input(INPUT_POST, 'status') === 'Aguardando COD') {
+            $statusRelatorio = 2;
+        } elseif (filter_input(INPUT_POST, 'status') === 'Gerador Ligado') {
+            $statusRelatorio = 3;
+        } else {
+            $statusRelatorio = 4;
+        }
+
+
+        $relatorio = new AtendimentoReport();
+        $relatorio->idEquip = $id;
+        $relatorio->endereco = $endereco;
+        $relatorio->tipoAtendimento = $tipoAtendimento;
+        $relatorio->horaChamado = $horaChamado;
+        $relatorio->tipoConexao = $tipoConexao;
+        $relatorio->caminhao = $caminhao;
+        $relatorio->seccaoCondutor = $seccaoCondutor;
+        $relatorio->lancesPorFase = $lancesPorFase;
+        $relatorio->lancesNeutro = $lancesNeutro;
+        $relatorio->horimetroInicial = $horimetroInicial;
+        $relatorio->horimetroFinal = $horimetroFinal;
+        $relatorio->kwhInicial = $kwhInicial;
+        $relatorio->kwhFinal = $kwhFinal;
+        $relatorio->chegadaGmg = $chegadaGmg;
+        $relatorio->inicioOperacao = $inicioOperacao;
+        $relatorio->terminoOperacao = $terminoOperacao;
+        $relatorio->obs = $obs;
+        $relatorio->statusRelatorio = $statusRelatorio;
+        $relatorio->save();
+
+        $idAtendimento = Atendimentoreport::latest('id')->first();
+        $obsReport = 'Novo Status: ' . filter_input(INPUT_POST, 'status');
+
+        Obsatendimentoreport::create([
+            'idAtendimento' => $idAtendimento->id,
+            'obs' => 'Atendimento Criado'
+        ]);
+
+        Obsatendimentoreport::create([
+            'idAtendimento' => $idAtendimento->id,
+            'obs' => $obsReport
+        ]);
+
+        if ($obs) {
+
+            Obsatendimentoreport::create([
+                'idAtendimento' => $idAtendimento->id,
+                'obs' => $obs
+            ]);
+        }
+
+        return redirect()->route('detalhemaquina', $id)->with('success', 'Atendimento Criado com sucesso!');
+    }
+
+    public function alteraAtendimento($id)
+    {
+
+        $dadosRelatorio = AtendimentoReport::where('id', $id)->first();
+
+        return view('Locacoes.alteraAtendimento', [
+            'dadosRelatorio' => $dadosRelatorio,
+        ]);
+    }
+
+    public function processaAlteraAtendimento($id)
+    {
+
+        if (filter_input(INPUT_POST, 'status') === 'Stand By') {
+            $statusRelatorio = 1;
+        } elseif (filter_input(INPUT_POST, 'status') === 'Aguardando COD') {
+            $statusRelatorio = 2;
+        } elseif (filter_input(INPUT_POST, 'status') === 'Gerador Ligado') {
+            $statusRelatorio = 3;
+        } else {
+            $statusRelatorio = 4;
+        }
+
+        if (filter_input(INPUT_POST, 'horimetroInicial') == '') {
+            $horimetroInicial = null;
+        } else {
+            $horimetroInicial = filter_input(INPUT_POST, 'horimetroInicial');
+        }
+
+        if (filter_input(INPUT_POST, 'horimetroFinal') == '') {
+            $horimetroFinal = null;
+        } else {
+            $horimetroFinal = filter_input(INPUT_POST, 'horimetroFinal');
+        }
+
+
+        if (filter_input(INPUT_POST, 'kwhInicial') == '') {
+            $kwhInicial = null;
+        } else {
+            $kwhInicial = filter_input(INPUT_POST, 'kwhInicial');
+        }
+
+        if (filter_input(INPUT_POST, 'kwhFinal') == '') {
+            $kwhFinal = null;
+        } else {
+            $kwhFinal = filter_input(INPUT_POST, 'kwhFinal');
+        }
+
+
+        $relatorio = AtendimentoReport::findOrFail($id);
+
+        $relatorio->statusRelatorio = $statusRelatorio;
+        $relatorio->horimetroInicial = $horimetroInicial;
+        $relatorio->horimetroFinal = $horimetroFinal;
+        $relatorio->kwhInicial = $kwhInicial;
+        $relatorio->kwhFinal = $kwhFinal;
+
+        $relatorio->save();
+
+        $obsReport = 'Novo Status: ' . filter_input(INPUT_POST, 'status');
+        Obsatendimentoreport::create([
+            'idAtendimento' => $id,
+            'obs' => $obsReport
+        ]);
+
+        $obs = filter_input(INPUT_POST, 'obsGerais');
+
+        if ($obs) {
+
+            Obsatendimentoreport::create([
+                'idAtendimento' => $id,
+                'obs' => $obs,
+            ]);
+        }
+
+        $idMaquina = AtendimentoReport::where('id', $id)->first();
+
+        if (filter_input(INPUT_POST, 'status') === 'Atendimento Finalizado') {
+            return redirect()->route('detalhemaquina', $idMaquina->idEquip)->with('success', 'Atendimento Finalizado com sucesso!');
+        } else {
+            return redirect()->route('detalhemaquina', $idMaquina->idEquip)->with('success', 'Atendimento Alterado com sucesso!');
+        }
     }
 }
